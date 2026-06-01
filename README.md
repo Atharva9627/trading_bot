@@ -51,7 +51,8 @@ Bash
 python server.py
 Open your web browser workspace engine and navigate to: http://127.0.0.1:5000
 
-🚀 How to Run Examples
+##🚀 How to Run Examples
+
 A. Executing a Standard MARKET Order
 Select ETHUSDT from the top ticker pills matrix.
 
@@ -81,15 +82,7 @@ Isolated vs. Cross Margin: Leverage sizing maximums default to standard cross ma
 
 Testnet Domain Locks: Requests route strictly through the https://testnet.binancefuture.com network layer endpoints.
 
-🗂️ Project Directory Layout
-Plaintext
-├── server.py              # Flask API router, request signer, and TWAP thread supervisor
-├── .env                   # Local hidden configuration credentials warehouse (git ignored)
-├── requirements.txt       # Production library dependency tree mapping definitions
-└── templates/
-    └── index.html         # Workspace layout UI, TradingView widgets, and client state managers
-📜 System Execution Logs
-These lines display exactly how your terminal outputs order statuses into your internal debugger logs container during execution sweeps:
+<img width="1185" height="249" alt="image" src="https://github.com/user-attachments/assets/2be16a58-9bd4-4736-bbfd-a7f01516d3ee" />
 
 🟢 1. MARKET Order Log Signature
 Plaintext
