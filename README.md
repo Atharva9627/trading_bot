@@ -51,9 +51,11 @@ Bash
 python server.py
 Open your web browser workspace engine and navigate to: http://127.0.0.1:5000
 
-##🚀 How to Run Examples
+---
 
-A. Executing a Standard MARKET Order
+## 🚀 How to Run Examples
+
+### A. Executing a Standard MARKET Order
 Select ETHUSDT from the top ticker pills matrix.
 
 Ensure the Master Execution Mode toggle is highlighted on BUY / LONG.
@@ -75,7 +77,7 @@ Click Deploy TWAP Long Algorithm.
 
 Switch to the Open Pending Orders tab section below the chart area to watch your progress bars update in real-time.
 
-🧠 System Assumptions & Bounds
+## 🧠 System Assumptions & Bounds
 USDT Collateralization: The engine assumes an active, funded USDT-M Futures Contract Wallet setup. It strictly filters account balance streams to parse USDT values.
 
 Isolated vs. Cross Margin: Leverage sizing maximums default to standard cross matrix indicators returned via positionRisk structures.
@@ -84,7 +86,7 @@ Testnet Domain Locks: Requests route strictly through the https://testnet.binanc
 
 <img width="1185" height="249" alt="image" src="https://github.com/user-attachments/assets/2be16a58-9bd4-4736-bbfd-a7f01516d3ee" />
 
-🟢 1. MARKET Order Log Signature
+## 🟢 1. MARKET Order Log Signature
 Plaintext
  System UI mapping loaded.
  Linked backend Flask proxy server successfully.
@@ -93,7 +95,10 @@ Plaintext
  [API POST] Path /fapi/v1/order executed payload -> symbol=ETHUSDT&side=BUY&type=MARKET&quantity=0.017
  Order Dispatched: MARKET | Status: FILLED | Executed Qty: 0.017 | Avg Price: $3412.50
  [POLLED] Balance updated: 1450.23 USDT | ETH Position parsed: +0.017
-🟡 2. LIMIT Order Log Signature
+
+ --- 
+ 
+## 🟡 2. LIMIT Order Log Signature
 Plaintext
  Context switched to BTCUSDT
  Loaded bounds for BTCUSDT: Min=0.001, Max Safe=0.241, Tick=0.1
