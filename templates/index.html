@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Quantum Core | Algorithmic Trading Console</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-obsidian: #08090b;      
+            --bg-surface: #0f1115;       
+            --bg-elevated: #15191e;      
+            --bg-input: #0b0c0e;         
+            
+            --text-high: #f5f6f7;        
+            --text-medium: #a0a5ad;      
+            --text-dim: #5c6066;         
+            
+            --neon-gold: #f6c000;        
+            --green-glow: #02c076;       
+            --red-glow: #f84960;         
+            --blue-glow: #3861fb;        
+            
+            --border-subtle: #1c2128;    
+            --border-active: #313a46;    
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --transition-smooth: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            scrollbar-color: var(--border-active) var(--bg-obsidian);
+            scrollbar-width: thin;
+        }
+
+        body {
+            background-color: var(--bg-obsidian);
+            color: var(--text-high);
+            font-family: var(--font-main);
+            font-size: 13px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .ribbon-nav {
+            background-color: var(--bg-surface);
+            height: 54px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 10;
+        }
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: 0.1em;
+            color: var(--text-high);
+        }
+        .brand-logo span {
+            color: var(--neon-gold);
+            text-shadow: 0 0 12px rgba(246, 192, 0, 0.3);
+        }
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .ticker-pills {
+            display: flex;
+            gap: 8px;
+        }
+        .ticker-pill {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+        .ticker-pill:hover, .ticker-pill.active {
+            border-color: var(--neon-gold);
+            color: var(--neon-gold);
+            background-color: rgba(246, 192, 0, 0.05);
+        }
+        .connection-badge {
+            background-color: rgba(2, 192, 118, 0.1);
+            border: 1px solid rgba(2, 192, 118, 0.2);
+            color: var(--green-glow);
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .connection-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--green-glow);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        .workspace-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 310px 1fr 340px;
+            overflow: hidden;
+        }
+
+        .workspace-panel {
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .workspace-panel.right-form {
+            border-right: none;
+            border-left: 1px solid var(--border-subtle);
+        }
+
+        .panel-header-tab {
+            height: 40px;
+            background-color: #0b0d10;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-medium);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .panel-scrollable {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .metric-group {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 16px;
+        }
+        .metric-title {
+            color: var(--text-dim);
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-high);
+        }
+
+        .terminal-viewport {
+            background-color: #050607;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-medium);
+            flex: 1;
+            overflow-y: auto;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        .terminal-line { margin-bottom: 6px; }
+        .terminal-line .time { color: var(--text-dim); margin-right: 6px; }
+        .terminal-line.success { color: var(--green-glow); }
+        .terminal-line.error { color: var(--red-glow); }
+        .terminal-line.info { color: var(--blue-glow); }
+
+        .center-split {
+            display: grid;
+            grid-template-rows: 1fr 240px;
+            overflow: hidden;
+            height: 100%;
+        }
+        #chartContainer {
+            background-color: var(--bg-obsidian);
+            position: relative;
+        }
+        
+        .bottom-data-tabs {
+            border-top: 1px solid var(--border-subtle);
+            background-color: var(--bg-surface);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .tab-headers {
+            display: flex;
+            background-color: #0b0d10;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 10px;
+        }
+        .tab-btn {
+            padding: 10px 16px;
+            color: var(--text-dim);
+            background: none;
+            border: none;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition-smooth);
+        }
+        .tab-btn:hover { color: var(--text-high); }
+        .tab-btn.active {
+            color: var(--neon-gold);
+            border-bottom-color: var(--neon-gold);
+        }
+        
+        .tab-view {
+            flex: 1;
+            overflow-y: auto;
+            display: none;
+        }
+        .tab-view.active { display: block; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--bg-surface);
+            color: var(--text-dim);
+            font-family: var(--font-main);
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-high);
+        }
+        tr:hover td {
+            background-color: rgba(255,255,255,0.01);
+        }
+        
+        .pill-buy { color: var(--green-glow); font-weight: 600; }
+        .pill-sell { color: var(--red-glow); font-weight: 600; }
+        .btn-cancel {
+            background-color: rgba(248, 73, 96, 0.1);
+            color: var(--red-glow);
+            border: 1px solid rgba(248, 73, 96, 0.2);
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition-smooth);
+        }
+        .btn-cancel:hover {
+            background-color: var(--red-glow);
+            color: #000;
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .side-toggle {
+            display: flex;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 4px;
+        }
+        .side-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            color: var(--text-dim);
+        }
+        .side-btn.active.buy {
+            background-color: rgba(2, 192, 118, 0.15);
+            color: var(--green-glow);
+        }
+        .side-btn.active.sell {
+            background-color: rgba(248, 73, 96, 0.15);
+            color: var(--red-glow);
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-high);
+            padding: 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            transition: var(--transition-smooth);
+        }
+        input:focus, select:focus {
+            border-color: var(--neon-gold);
+            background-color: var(--bg-obsidian);
+        }
+
+        .type-tabs {
+            display: flex;
+            gap: 8px;
+        }
+        .type-tab-btn {
+            flex: 1;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-medium);
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .type-tab-btn.active {
+            border-color: var(--neon-gold);
+            color: var(--neon-gold);
+            background-color: rgba(246, 192, 0, 0.05);
+        }
+
+        .input-helper-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            padding: 0 2px;
+        }
+        .rule-badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            background-color: var(--bg-input);
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .pct-buttons {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+        }
+        .pct-btn {
+            flex: 1;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-medium);
+            padding: 5px 0;
+            border-radius: 4px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .pct-btn:hover {
+            border-color: var(--neon-gold);
+            color: var(--neon-gold);
+        }
+
+        #limitPriceGroup {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        #submitOrderBtn {
+            background-color: var(--green-glow);
+            color: #020304;
+            border: none;
+            padding: 14px;
+            width: 100%;
+            font-size: 13px;
+            font-weight: 800;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            transition: var(--transition-smooth);
+        }
+        #submitOrderBtn:hover { filter: brightness(1.1); }
+        #submitOrderBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #statusToast {
+            position: fixed;
+            bottom: -80px;
+            right: 20px;
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-left: 4px solid var(--neon-gold);
+            padding: 14px 20px;
+            border-radius: 6px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+        }
+        #statusToast.active { bottom: 20px; }
+        #toastIndicator { width: 8px; height: 8px; border-radius: 50%; }
+    </style>
+</head>
+<body>
+
+    <div class="ribbon-nav">
+        <div class="brand-logo">
+            <span>⚡</span> QUANTUM CORE ENGINE
+        </div>
+        
+        <div class="header-meta">
+            <div class="ticker-pills">
+                <div class="ticker-pill active" onclick="selectSymbol('BTCUSDT')">BTCUSDT</div>
+                <div class="ticker-pill" onclick="selectSymbol('ETHUSDT')">ETHUSDT</div>
+                <div class="ticker-pill" onclick="selectSymbol('SOLUSDT')">SOLUSDT</div>
+                <div class="ticker-pill" onclick="selectSymbol('XRPUSDT')">XRPUSDT</div>
+            </div>
+            
+            <div class="connection-badge">
+                <div class="connection-dot"></div>
+                TESTNET LINKED
+            </div>
+        </div>
+    </div>
+
+    <div class="workspace-grid">
+        
+        <div class="workspace-panel">
+            <div class="panel-header-tab">Security Core Info</div>
+            <div class="panel-scrollable" style="display: flex; flex-direction: column;">
+                
+                <div class="metric-group">
+                    <div class="metric-title">Available Wallet Margin</div>
+                    <div class="metric-value"><span id="metricBalance">0.00</span> <span style="font-size:12px; color:var(--text-dim);">USDT</span></div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-title">Live API Key Identifier</div>
+                    <div class="metric-value" style="font-size:12px; word-break:break-all;" id="apiKeyIdent">Loading API...</div>
+                </div>
+
+                <div style="flex:1; display:flex; flex-direction:column; margin-top:10px;">
+                    <div class="metric-title">Local System Engine logs</div>
+                    <div class="terminal-viewport" id="consoleLogs">
+                        <div class="terminal-line"><span class="time">15:06:01</span>System UI mapping loaded.</div>
+                        <div class="terminal-line success"><span class="time">15:06:02</span>Linked backend Flask proxy server successfully.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="workspace-panel">
+            <div class="center-split">
+                
+                <div id="chartContainer">
+                    <div id="tvWidget" style="height: 100%; width: 100%;"></div>
+                </div>
+
+                <div class="bottom-data-tabs">
+                    <div class="tab-headers">
+                        <button class="tab-btn active" onclick="switchDataTab('positions')">Active Positions</button>
+                        <button class="tab-btn" onclick="switchDataTab('openOrders')">Open Pending Orders</button>
+                        <button class="tab-btn" onclick="switchDataTab('history')">Trade Executions</button>
+                    </div>
+
+                    <div id="tabPositions" class="tab-view active">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Size</th>
+                                    <th>Entry Price</th>
+                                    <th>Mark Price</th>
+                                    <th>Unrealized PNL</th>
+                                </tr>
+                            </thead>
+                            <tbody id="positionTableBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                                        No active futures positions. Place an order to open one!
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="tabOpenOrders" class="tab-view">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Type</th>
+                                    <th>Side</th>
+                                    <th>Price</th>
+                                    <th>Original Qty</th>
+                                    <th>Filled Qty</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="openOrdersTableBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                                        No active pending limit orders found.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="tabHistory" class="tab-view">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Type</th>
+                                    <th>Side</th>
+                                    <th>Target Price</th>
+                                    <th>Orig Qty</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-dim); padding: 30px;">
+                                        Click "Execute" or switch symbols to load past history streams.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="workspace-panel right-form">
+            <div class="panel-header-tab">Terminal execution block</div>
+            <div class="panel-scrollable">
+                <div class="form-section">
+                    
+                    <div class="form-group">
+                        <label>Side Action Mode</label>
+                        <div class="side-toggle">
+                            <div id="sideBuy" class="side-btn buy active" onclick="setSide('BUY')">BUY / LONG</div>
+                            <div id="sideSell" class="side-btn sell" onclick="setSide('SELL')">SELL / SHORT</div>
+                        </div>
+                        <input type="hidden" id="orderSide" value="BUY">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Trading Pair</label>
+                        <input type="text" id="symbolInput" value="BTCUSDT" onchange="onSymbolInputChange()">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Order Frame Structure</label>
+                        <div class="type-tabs">
+                            <button id="typeMarket" class="type-tab-btn active" onclick="setOrderType('MARKET')">MARKET</button>
+                            <button id="typeLimit" class="type-tab-btn" onclick="setOrderType('LIMIT')">LIMIT</button>
+                        </div>
+                        <input type="hidden" id="orderType" value="MARKET">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity Allocation</label>
+                        <input type="number" id="quantity" value="0.001" step="0.001" min="0.001" oninput="validateAndClampQty()">
+                        
+                        <div class="pct-buttons">
+                            <button class="pct-btn" onclick="setPercentageQty(0.25)">25%</button>
+                            <button class="pct-btn" onclick="setPercentageQty(0.50)">50%</button>
+                            <button class="pct-btn" onclick="setPercentageQty(0.75)">75%</button>
+                            <button class="pct-btn" onclick="setPercentageQty(1.00)">100%</button>
+                        </div>
+
+                        <div class="input-helper-row" style="margin-top: 8px;">
+                            <span class="rule-badge" id="lblMinQty">Min: 0.001</span>
+                            <span class="rule-badge" id="lblMaxQty" style="color: var(--neon-gold)">Max Safe: 0.000</span>
+                        </div>
+                    </div>
+
+                    <div id="limitPriceGroup" class="form-group">
+                        <label>Trigger Entry Limit Price ($)</label>
+                        <input type="number" id="price" value="60000" step="0.1">
+                        <div class="input-helper-row">
+                            <span class="rule-badge" id="lblTickSize">Tick Size: 0.1</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <button id="submitOrderBtn" onclick="executeTrade()">Transmit Long Order</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="statusToast">
+        <div id="toastIndicator"></div>
+        <div id="toastText">Testing connection payload...</div>
+    </div>
+
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <script>
+        let selectedSymbol = "BTCUSDT";
+        let activeSide = "BUY";
+        let activeType = "MARKET";
+        let tvWidgetInstance = null;
+        
+        let activeMinQty = 0.001;
+        let activeMaxSafeQty = 0.000;
+        let activeStepSize = 0.001;
+        let activeTickSize = 0.1;
+
+        window.onload = function() {
+            initTradingViewWidget(selectedSymbol);
+            refreshAccountData();
+            setInterval(refreshAccountData, 6000);
+        }
+
+        function initTradingViewWidget(symbol) {
+            document.getElementById('tvWidget').innerHTML = '';
+            tvWidgetInstance = new TradingView.widget({
+                "autosize": true,
+                "symbol": `BINANCE:${symbol}.P`,
+                "interval": "15",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#15191e",
+                "enable_publishing": false,
+                "hide_side_toolbar": false,
+                "allow_symbol_change": false,
+                "backgroundColor": "#0f1115",
+                "gridColor": "#1c2128",
+                "container_id": "tvWidget"
+            });
+        }
+
+        async function selectSymbol(sym) {
+            selectedSymbol = sym.toUpperCase();
+            document.getElementById('symbolInput').value = selectedSymbol;
+            
+            document.querySelectorAll('.ticker-pill').forEach(pill => {
+                pill.classList.remove('active');
+                if(pill.innerText === selectedSymbol) pill.classList.add('active');
+            });
+
+            addConsoleLog(`Context switched to ${selectedSymbol}`, 'info');
+            initTradingViewWidget(selectedSymbol);
+            await loadSymbolRules(selectedSymbol);
+            refreshAccountData();
+        }
+
+        async function loadSymbolRules(symbol) {
+            try {
+                const res = await fetch(`/api/symbol_rules?symbol=${symbol}`);
+                const rules = await res.json();
+                
+                if (rules && !rules.error) {
+                    activeMinQty = rules.minQty;
+                    activeStepSize = rules.stepSize;
+                    activeTickSize = rules.tickSize;
+                    activeMaxSafeQty = rules.maxSafeQty;
+                    
+                    const qtyInput = document.getElementById('quantity');
+                    qtyInput.min = activeMinQty;
+                    qtyInput.step = activeStepSize;
+                    qtyInput.value = activeMinQty;
+                    
+                    const priceInput = document.getElementById('price');
+                    priceInput.step = activeTickSize;
+                    
+                    if (rules.currentPrice > 0) {
+                        priceInput.value = rules.currentPrice;
+                    }
+                    
+                    document.getElementById('lblMinQty').innerText = `Min: ${activeMinQty}`;
+                    document.getElementById('lblMaxQty').innerText = `Max Safe: ${activeMaxSafeQty}`;
+                    document.getElementById('lblTickSize').innerText = `Tick: ${activeTickSize}`;
+                    
+                    addConsoleLog(`Loaded bounds for ${symbol}: Min=${activeMinQty}, Max Safe=${activeMaxSafeQty}`, 'info');
+                }
+            } catch(e) {
+                console.error("Failed to load symbol rules: ", e);
+            }
+        }
+
+        function setPercentageQty(fraction) {
+            const calculated = activeMaxSafeQty * fraction;
+            const decimalPlaces = (activeStepSize.toString().split('.')[1] || '').length;
+            const stepPrecision = 1 / activeStepSize;
+            
+            let aligned = Math.floor(calculated * stepPrecision) / stepPrecision;
+            aligned = parseFloat(aligned.toFixed(decimalPlaces));
+            
+            if (aligned < activeMinQty) aligned = activeMinQty;
+            if (aligned > activeMaxSafeQty) aligned = activeMaxSafeQty;
+            
+            document.getElementById('quantity').value = aligned;
+            addConsoleLog(`Sized quantity to ${fraction * 100}% of available buying power: ${aligned}`, 'info');
+        }
+
+        function validateAndClampQty() {
+            const input = document.getElementById('quantity');
+            let val = parseFloat(input.value);
+            
+            if (isNaN(val)) return;
+            
+            if (val > activeMaxSafeQty) {
+                input.value = activeMaxSafeQty;
+                showToast(`Capped to Max Safe Size: ${activeMaxSafeQty}`, 'error');
+                addConsoleLog(`Input exceeded maximum affordable size. Clamped to ${activeMaxSafeQty}.`, 'error');
+            } else if (val < activeMinQty) {
+                input.value = activeMinQty;
+            }
+        }
+
+        function onSymbolInputChange() {
+            const val = document.getElementById('symbolInput').value.toUpperCase();
+            if(val) selectSymbol(val);
+        }
+
+        function setSide(side) {
+            activeSide = side;
+            document.getElementById('orderSide').value = side;
+
+            const buyBtn = document.getElementById('sideBuy');
+            const sellBtn = document.getElementById('sideSell');
+            const submitBtn = document.getElementById('submitOrderBtn');
+
+            if(side === 'BUY') {
+                buyBtn.classList.add('active');
+                sellBtn.classList.remove('active');
+                submitBtn.style.backgroundColor = 'var(--green-glow)';
+                submitBtn.innerText = 'Transmit Long Order';
+            } else {
+                sellBtn.classList.add('active');
+                buyBtn.classList.remove('active');
+                submitBtn.style.backgroundColor = 'var(--red-glow)';
+                submitBtn.innerText = 'Transmit Short Order';
+            }
+        }
+
+        function setOrderType(type) {
+            activeType = type;
+            document.getElementById('orderType').value = type;
+
+            const marketBtn = document.getElementById('typeMarket');
+            const limitBtn = document.getElementById('typeLimit');
+            const priceGrp = document.getElementById('limitPriceGroup');
+
+            if(type === 'LIMIT') {
+                limitBtn.classList.add('active');
+                marketBtn.classList.remove('active');
+                priceGrp.style.display = 'block';
+            } else {
+                marketBtn.classList.add('active');
+                limitBtn.classList.remove('active');
+                priceGrp.style.display = 'none';
+            }
+        }
+
+        function switchDataTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+
+            event.target.classList.add('active');
+            if(tabId === 'positions') document.getElementById('tabPositions').classList.add('active');
+            if(tabId === 'openOrders') document.getElementById('tabOpenOrders').classList.add('active');
+            if(tabId === 'history') document.getElementById('tabHistory').classList.add('active');
+        }
+
+        async function refreshAccountData() {
+            try {
+                const balRes = await fetch('/api/balance');
+                const balData = await balRes.json();
+                if(balData && balData.balance) {
+                    const balanceFloat = parseFloat(balData.balance);
+                    document.getElementById('metricBalance').innerText = balanceFloat.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('apiKeyIdent').innerText = balData.accountAlias || "Authorized Key Block";
+                }
+
+                const posRes = await fetch('/api/positions');
+                const posData = await posRes.json();
+                renderPositions(posData);
+
+                const openRes = await fetch(`/api/open_orders?symbol=${selectedSymbol}`);
+                const openData = await openRes.json();
+                renderOpenOrders(openData);
+
+                const histRes = await fetch(`/api/history?symbol=${selectedSymbol}`);
+                const histData = await histRes.json();
+                renderHistory(histData);
+
+                const rulesRes = await fetch(`/api/symbol_rules?symbol=${selectedSymbol}`);
+                const rulesData = await rulesRes.json();
+                if (rulesData && !rulesData.error) {
+                    activeMaxSafeQty = rulesData.maxSafeQty;
+                    document.getElementById('lblMaxQty').innerText = `Max Safe: ${activeMaxSafeQty}`;
+                }
+
+            } catch (err) {
+                console.error("Link synchronization failed: ", err);
+            }
+        }
+
+        function renderPositions(list) {
+            const tbody = document.getElementById('positionTableBody');
+            if(!Array.isArray(list) || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">No active open contracts.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            list.forEach(p => {
+                const amt = parseFloat(p.positionAmt);
+                const sideClass = amt > 0 ? 'pill-buy' : 'pill-sell';
+                const sideText = amt > 0 ? 'LONG' : 'SHORT';
+                const pnl = parseFloat(p.unrealizedProfit);
+                const pnlClass = pnl >= 0 ? 'pill-buy' : 'pill-sell';
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${p.symbol}</strong></td>
+                        <td class="${sideClass}">${sideText} (${amt})</td>
+                        <td>$${parseFloat(p.entryPrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td>$${parseFloat(p.markPrice).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="${pnlClass}">$${pnl.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderOpenOrders(list) {
+            const tbody = document.getElementById('openOrdersTableBody');
+            if(!Array.isArray(list) || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">No pending limit orders on ${selectedSymbol}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            list.forEach(o => {
+                const sideClass = o.side === 'BUY' ? 'pill-buy' : 'pill-sell';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${o.orderId}</td>
+                        <td>${o.type}</td>
+                        <td class="${sideClass}">${o.side}</td>
+                        <td>$${parseFloat(o.price).toLocaleString()}</td>
+                        <td>${o.origQty}</td>
+                        <td>${o.executedQty}</td>
+                        <td><button class="btn-cancel" onclick="cancelActiveOrder('${o.symbol}', '${o.orderId}')">Cancel</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderHistory(list) {
+            const tbody = document.getElementById('historyTableBody');
+            if(!Array.isArray(list) || list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 30px;">No transaction logs.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            list.reverse().forEach(o => {
+                const sideClass = o.side === 'BUY' ? 'pill-buy' : 'pill-sell';
+                const priceVal = parseFloat(o.price) > 0 ? `$${parseFloat(o.price).toLocaleString()}` : 'MARKET';
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${o.orderId}</td>
+                        <td>${o.type}</td>
+                        <td class="${sideClass}">${o.side}</td>
+                        <td>${priceVal}</td>
+                        <td>${o.origQty}</td>
+                        <td><strong style="color:var(--text-high)">${o.status}</strong></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function executeTrade() {
+            const btn = document.getElementById('submitOrderBtn');
+            const originalText = btn.innerText;
+
+            btn.disabled = true;
+            btn.innerText = "Transmitting...";
+            addConsoleLog(`Submitting payload to proxy sanitization engine...`, 'info');
+
+            const payload = {
+                symbol: selectedSymbol,
+                side: activeSide,
+                type: activeType,
+                quantity: document.getElementById('quantity').value,
+                price: document.getElementById('price').value
+            };
+
+            try {
+                const res = await fetch('/api/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                btn.disabled = false;
+                btn.innerText = originalText;
+
+                if (data.code) {
+                    addConsoleLog(`Order Rejected: ${data.msg} (Code ${data.code})`, 'error');
+                    showToast(`Error: ${data.msg}`, 'error');
+                } else {
+                    addConsoleLog(`Order Accepted! ID: ${data.orderId} | Status: ${data.status}`, 'success');
+                    showToast(`Order Accepted! ID: ${data.orderId}`, 'success');
+                    
+                    if(activeType === 'LIMIT') {
+                        switchDataTab('openOrders');
+                    } else {
+                        switchDataTab('positions');
+                    }
+                    refreshAccountData();
+                }
+
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                addConsoleLog(`Link Timeout: Could not connect to Python API proxy.`, 'error');
+                showToast("Connection timeout error.", "error");
+            }
+        }
+
+        async function cancelActiveOrder(sym, orderId) {
+            addConsoleLog(`Sending Cancel request for Order #${orderId}...`, 'info');
+            try {
+                const res = await fetch('/api/cancel_order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: sym, orderId: orderId })
+                });
+                const data = await res.json();
+
+                if(data.code) {
+                    addConsoleLog(`Cancel Failed: ${data.msg}`, 'error');
+                    showToast(`Cancel failed: ${data.msg}`, 'error');
+                } else {
+                    addConsoleLog(`Order #${orderId} cancelled successfully!`, 'success');
+                    showToast(`Order #${orderId} Cancelled`, 'success');
+                    refreshAccountData();
+                }
+            } catch(err) {
+                addConsoleLog(`System Link failure on cancel action: ${err}`, 'error');
+            }
+        }
+
+        function addConsoleLog(msg, type = 'info') {
+            const box = document.getElementById('consoleLogs');
+            const ts = new Date().toLocaleTimeString('en-GB');
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.innerHTML = `<span class="time">${ts}</span>${msg}`;
+            box.appendChild(line);
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function showToast(msg, type = 'success') {
+            const bar = document.getElementById('statusToast');
+            const indicator = document.getElementById('toastIndicator');
+            const text = document.getElementById('toastText');
+
+            indicator.style.backgroundColor = type === 'success' ? 'var(--green-glow)' : 'var(--red-glow)';
+            text.innerText = msg;
+            bar.classList.add('active');
+            setTimeout(() => bar.classList.remove('active'), 4000);
+        }
+    </script>
+</body>
+</html>
