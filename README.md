@@ -25,6 +25,13 @@ Quantum Core is a high-performance, responsive full-stack trading workspace engi
 * **Precision Formatting Gates:** Feeds all transactional values through math filters to cleanly clip floats down to token-specific lot sizes (`stepSize`) and pricing steps (`tickSize`), entirely eliminating round-off validation errors.
 
 ---
+## 🚀 Demo
+
+🎥 Click below to watch the demo:
+
+[![Watch Demo](https://img.shields.io/badge/Watch-Demo-blue?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/15D5Z5ugc_raZHpotHzdKhBDpWqmW6Bct/view?usp=sharing)
+
+---
 
 
 <img width="919" height="412" alt="image" src="https://github.com/user-attachments/assets/b9832654-7df2-4877-99b6-a2a14b1798e6" />
