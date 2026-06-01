@@ -301,31 +301,38 @@
             gap: 16px;
         }
 
-        .side-toggle {
+        /* 3-WAY MASTER TOGGLE SIGNALS BAR Layout style rules */
+        .master-toggle {
             display: flex;
             background-color: var(--bg-input);
             border: 1px solid var(--border-subtle);
             border-radius: 6px;
             padding: 4px;
+            gap: 4px;
         }
-        .side-btn {
+        .master-btn {
             flex: 1;
-            padding: 10px;
+            padding: 10px 6px;
             text-align: center;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 11px;
             border-radius: 4px;
             cursor: pointer;
             transition: var(--transition-smooth);
             color: var(--text-dim);
         }
-        .side-btn.active.buy {
+        .master-btn.active.buy {
             background-color: rgba(2, 192, 118, 0.15);
             color: var(--green-glow);
         }
-        .side-btn.active.sell {
+        .master-btn.active.sell {
             background-color: rgba(248, 73, 96, 0.15);
             color: var(--red-glow);
+        }
+        .master-btn.active.oco {
+            background-color: rgba(56, 97, 251, 0.15);
+            color: var(--blue-glow);
+            border: 1px solid rgba(56, 97, 251, 0.3);
         }
 
         .form-group label {
@@ -415,7 +422,7 @@
             color: var(--neon-gold);
         }
 
-        #limitPriceGroup {
+        #limitPriceGroup, #twapParamsGroup, #ocoParamsGroup {
             display: none;
             animation: fadeIn 0.2s ease-out;
         }
@@ -554,12 +561,12 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Order ID</th>
+                                    <th>Order ID / Algorithm</th>
                                     <th>Type</th>
                                     <th>Side</th>
-                                    <th>Price</th>
-                                    <th>Original Qty</th>
-                                    <th>Filled Qty</th>
+                                    <th>Price / Target Vol</th>
+                                    <th>Progress / Qty</th>
+                                    <th>Status Metrics</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -605,10 +612,10 @@
                 <div class="form-section">
                     
                     <div class="form-group">
-                        <label>Side Action Mode</label>
-                        <div class="side-toggle">
-                            <div id="sideBuy" class="side-btn buy active" onclick="setSide('BUY')">BUY / LONG</div>
-                            <div id="sideSell" class="side-btn sell" onclick="setSide('SELL')">SELL / SHORT</div>
+                        <label>Master Execution Mode</label>
+                        <div class="master-toggle">
+                            <div id="sideBuy" class="master-btn buy active" onclick="setMasterMode('BUY')">BUY / LONG</div>
+                            <div id="sideSell" class="master-btn sell" onclick="setMasterMode('SELL')">SELL / SHORT</div>
                         </div>
                         <input type="hidden" id="orderSide" value="BUY">
                     </div>
@@ -618,17 +625,27 @@
                         <input type="text" id="symbolInput" value="BTCUSDT" onchange="onSymbolInputChange()">
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" id="orderTypeTabsGroup">
                         <label>Order Frame Structure</label>
                         <div class="type-tabs">
                             <button id="typeMarket" class="type-tab-btn active" onclick="setOrderType('MARKET')">MARKET</button>
                             <button id="typeLimit" class="type-tab-btn" onclick="setOrderType('LIMIT')">LIMIT</button>
+                            <button id="typeTwap" class="type-tab-btn" onclick="setOrderType('TWAP')">TWAP</button>
                         </div>
                         <input type="hidden" id="orderType" value="MARKET">
+
+                        <div class="pct-buttons" style="margin-top: 8px;">
+                            <button class="pct-btn" style="border-color: rgba(246, 192, 0, 0.2); color: var(--text-medium);" onclick="quickCheckOrders('openOrders')">
+                                🔍 View Pending Orders
+                            </button>
+                            <button class="pct-btn" style="border-color: rgba(246, 192, 0, 0.2); color: var(--text-medium);" onclick="quickCheckOrders('history')">
+                                📜 View Execution Log
+                            </button>
+                        </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Quantity Allocation</label>
+                        <label id="quantityLabel">Quantity Allocation</label>
                         <input type="number" id="quantity" value="0.001" step="0.001" min="0.001" oninput="validateAndClampQty()">
                         
                         <div class="pct-buttons">
@@ -638,8 +655,9 @@
                             <button class="pct-btn" onclick="setPercentageQty(1.00)">100%</button>
                         </div>
 
-                        <div class="input-helper-row" style="margin-top: 8px;">
+                        <div class="input-helper-row" style="margin-top: 8px; flex-wrap: wrap; gap: 4px;">
                             <span class="rule-badge" id="lblMinQty">Min: 0.001</span>
+                            <span class="rule-badge" id="lblCurrentHolding" style="color: var(--text-medium)">Holding: 0.00</span>
                             <span class="rule-badge" id="lblMaxQty" style="color: var(--neon-gold)">Max Safe: 0.000</span>
                         </div>
                     </div>
@@ -649,6 +667,33 @@
                         <input type="number" id="price" value="60000" step="0.1">
                         <div class="input-helper-row">
                             <span class="rule-badge" id="lblTickSize">Tick Size: 0.1</span>
+                        </div>
+                    </div>
+
+                    <div id="twapParamsGroup" style="display:none; flex-direction:column; gap:16px;">
+                        <div class="form-group">
+                            <label>TWAP Calculation Window</label>
+                            <select id="twapDuration">
+                                <option value="5">5 Minutes</option>
+                                <option value="10">10 Minutes</option>
+                                <option value="30">30 Minutes</option>
+                                <option value="60">60 Minutes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Execution Slices Count</label>
+                            <input type="number" id="twapSlices" value="5" min="2" max="20">
+                        </div>
+                    </div>
+
+                    <div id="ocoParamsGroup" style="display:none; flex-direction:column; gap:16px;">
+                        <div class="form-group">
+                            <label>Target Take-Profit Price ($)</label>
+                            <input type="number" id="ocoTakeProfit" value="65000" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label>Trigger Stop-Loss Price ($)</label>
+                            <input type="number" id="ocoStopLoss" value="58000" step="0.1">
                         </div>
                     </div>
 
@@ -670,19 +715,21 @@
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <script>
         let selectedSymbol = "BTCUSDT";
-        let activeSide = "BUY";
-        let activeType = "MARKET";
+        let masterMode = "BUY"; 
+        let activeSide = "BUY";  
+        let activeType = "MARKET"; 
         let tvWidgetInstance = null;
         
         let activeMinQty = 0.001;
         let activeMaxSafeQty = 0.000;
         let activeStepSize = 0.001;
         let activeTickSize = 0.1;
+        let liveTickerMarkPrice = 0.0;
 
         window.onload = function() {
             initTradingViewWidget(selectedSymbol);
             refreshAccountData();
-            setInterval(refreshAccountData, 6000);
+            setInterval(refreshAccountData, 2000); // Fast 2-second UI sync
         }
 
         function initTradingViewWidget(symbol) {
@@ -708,12 +755,10 @@
         async function selectSymbol(sym) {
             selectedSymbol = sym.toUpperCase();
             document.getElementById('symbolInput').value = selectedSymbol;
-            
             document.querySelectorAll('.ticker-pill').forEach(pill => {
                 pill.classList.remove('active');
                 if(pill.innerText === selectedSymbol) pill.classList.add('active');
             });
-
             addConsoleLog(`Context switched to ${selectedSymbol}`, 'info');
             initTradingViewWidget(selectedSymbol);
             await loadSymbolRules(selectedSymbol);
@@ -722,6 +767,11 @@
 
         async function loadSymbolRules(symbol) {
             try {
+                document.getElementById('lblMinQty').innerText = `Min: --`;
+                document.getElementById('lblMaxQty').innerText = `Max Safe: --`;
+                document.getElementById('lblCurrentHolding').innerText = `Holding: --`;
+                document.getElementById('lblCurrentHolding').style.color = 'var(--text-dim)';
+
                 const res = await fetch(`/api/symbol_rules?symbol=${symbol}`);
                 const rules = await res.json();
                 
@@ -730,6 +780,7 @@
                     activeStepSize = rules.stepSize;
                     activeTickSize = rules.tickSize;
                     activeMaxSafeQty = rules.maxSafeQty;
+                    liveTickerMarkPrice = rules.currentPrice || 0.0;
                     
                     const qtyInput = document.getElementById('quantity');
                     qtyInput.min = activeMinQty;
@@ -738,19 +789,44 @@
                     
                     const priceInput = document.getElementById('price');
                     priceInput.step = activeTickSize;
-                    
-                    if (rules.currentPrice > 0) {
-                        priceInput.value = rules.currentPrice;
-                    }
+                    if (rules.currentPrice > 0) priceInput.value = rules.currentPrice;
                     
                     document.getElementById('lblMinQty').innerText = `Min: ${activeMinQty}`;
                     document.getElementById('lblMaxQty').innerText = `Max Safe: ${activeMaxSafeQty}`;
                     document.getElementById('lblTickSize').innerText = `Tick: ${activeTickSize}`;
                     
+                    calculateOcoRecommendations();
                     addConsoleLog(`Loaded bounds for ${symbol}: Min=${activeMinQty}, Max Safe=${activeMaxSafeQty}`, 'info');
                 }
-            } catch(e) {
-                console.error("Failed to load symbol rules: ", e);
+            } catch(e) { console.error("Failed to load symbol rules: ", e); }
+        }
+
+        function calculateOcoRecommendations() {
+            if (!liveTickerMarkPrice || liveTickerMarkPrice <= 0) return;
+            
+            const tpInput = document.getElementById('ocoTakeProfit');
+            const slInput = document.getElementById('ocoStopLoss');
+            
+            if (masterMode === "OCO") {
+                const badgeText = document.getElementById('lblCurrentHolding').innerText;
+                const isShortHolding = badgeText.includes('-');
+                
+                if (isShortHolding) {
+                    tpInput.value = (liveTickerMarkPrice * 0.98).toFixed(activeTickSize < 1 ? 2 : 1);
+                    slInput.value = (liveTickerMarkPrice * 1.01).toFixed(activeTickSize < 1 ? 2 : 1);
+                } else {
+                    tpInput.value = (liveTickerMarkPrice * 1.02).toFixed(activeTickSize < 1 ? 2 : 1);
+                    slInput.value = (liveTickerMarkPrice * 0.99).toFixed(activeTickSize < 1 ? 2 : 1);
+                }
+                return;
+            }
+
+            if (activeSide === "BUY") {
+                tpInput.value = (liveTickerMarkPrice * 1.02).toFixed(activeTickSize < 1 ? 2 : 1);
+                slInput.value = (liveTickerMarkPrice * 0.99).toFixed(activeTickSize < 1 ? 2 : 1);
+            } else {
+                tpInput.value = (liveTickerMarkPrice * 0.98).toFixed(activeTickSize < 1 ? 2 : 1);
+                slInput.value = (liveTickerMarkPrice * 1.01).toFixed(activeTickSize < 1 ? 2 : 1);
             }
         }
 
@@ -767,73 +843,127 @@
             
             document.getElementById('quantity').value = aligned;
             addConsoleLog(`Sized quantity to ${fraction * 100}% of available buying power: ${aligned}`, 'info');
+            validateAndClampQty();
         }
 
         function validateAndClampQty() {
             const input = document.getElementById('quantity');
             let val = parseFloat(input.value);
             
-            if (isNaN(val)) return;
+            if (isNaN(val) || !liveTickerMarkPrice || liveTickerMarkPrice <= 0) return;
             
             if (val > activeMaxSafeQty) {
                 input.value = activeMaxSafeQty;
                 showToast(`Capped to Max Safe Size: ${activeMaxSafeQty}`, 'error');
                 addConsoleLog(`Input exceeded maximum affordable size. Clamped to ${activeMaxSafeQty}.`, 'error');
+                val = activeMaxSafeQty;
             } else if (val < activeMinQty) {
                 input.value = activeMinQty;
+                showToast(`Clamped to Exchange Min: ${activeMinQty}`, 'error');
+                addConsoleLog(`Input below contract limits. Raised back to exchange minimum floor: ${activeMinQty}.`, 'error');
+                val = activeMinQty;
+            }
+
+            let computedNotional = val * liveTickerMarkPrice;
+            let currentFloorRequirement = (activeType === "OCO") ? 5.0 : 50.0;
+            let currentSafeBufferTarget = (activeType === "OCO") ? 5.5 : 50.5;
+
+            if (computedNotional < currentFloorRequirement) {
+                let absoluteMinQtyRequired = currentSafeBufferTarget / liveTickerMarkPrice;
+                const preciseStepMultiplier = 1 / activeStepSize;
+                let stepAlignedMin = Math.ceil(absoluteMinQtyRequired * preciseStepMultiplier) / preciseStepMultiplier;
+                
+                if (stepAlignedMin <= activeMaxSafeQty) {
+                    input.value = stepAlignedMin;
+                    showToast(`Adjusted to meet $${parseInt(currentFloorRequirement)} Minimum Notional`, 'error');
+                    addConsoleLog(`Order value ($${computedNotional.toFixed(2)}) was too small. Raised size to ${stepAlignedMin} to clear Binance criteria.`, 'info');
+                } else {
+                    showToast(`Insufficient margin to clear $${parseInt(currentFloorRequirement)} threshold!`, 'error');
+                    addConsoleLog(`CRITICAL: Order is under $${parseInt(currentFloorRequirement)}, and your balance cannot scale up to meet the requirement.`, 'error');
+                }
             }
         }
 
-        function onSymbolInputChange() {
-            const val = document.getElementById('symbolInput').value.toUpperCase();
-            if(val) selectSymbol(val);
-        }
-
-        function setSide(side) {
-            activeSide = side;
-            document.getElementById('orderSide').value = side;
-
+        function setMasterMode(mode) {
+            masterMode = mode;
             const buyBtn = document.getElementById('sideBuy');
             const sellBtn = document.getElementById('sideSell');
+            const typeTabsGrp = document.getElementById('orderTypeTabsGroup');
+            const priceGrp = document.getElementById('limitPriceGroup');
+            const twapGrp = document.getElementById('twapParamsGroup');
             const submitBtn = document.getElementById('submitOrderBtn');
+            const qtyLabel = document.getElementById('quantityLabel');
 
-            if(side === 'BUY') {
-                buyBtn.classList.add('active');
-                sellBtn.classList.remove('active');
+            // Toggle layout selection indicators
+            buyBtn.classList.remove('active');
+            sellBtn.classList.remove('active');
+
+            if (mode === 'BUY') {
+                buyBtn.classList.add('active'); 
+                activeSide = 'BUY'; 
+                
+                // Keep structural display states completely undisturbed
+                if (typeTabsGrp) typeTabsGrp.style.display = 'block';
+                
+                // Restore primary action execution themes dynamically
                 submitBtn.style.backgroundColor = 'var(--green-glow)';
-                submitBtn.innerText = 'Transmit Long Order';
-            } else {
-                sellBtn.classList.add('active');
-                buyBtn.classList.remove('active');
+                setOrderType(activeType);
+                
+            } else if (mode === 'SELL') {
+                sellBtn.classList.add('active'); 
+                activeSide = 'SELL'; 
+                
+                if (typeTabsGrp) typeTabsGrp.style.display = 'block';
+                
+                // Restore warning action execution themes dynamically
                 submitBtn.style.backgroundColor = 'var(--red-glow)';
-                submitBtn.innerText = 'Transmit Short Order';
+                setOrderType(activeType);
             }
         }
 
         function setOrderType(type) {
+            if (masterMode === 'OCO') return;
             activeType = type;
-            document.getElementById('orderType').value = type;
-
             const marketBtn = document.getElementById('typeMarket');
             const limitBtn = document.getElementById('typeLimit');
+            const twapBtn = document.getElementById('typeTwap');
             const priceGrp = document.getElementById('limitPriceGroup');
+            const twapGrp = document.getElementById('twapParamsGroup');
+            const submitBtn = document.getElementById('submitOrderBtn');
+            const qtyLabel = document.getElementById('quantityLabel');
 
-            if(type === 'LIMIT') {
-                limitBtn.classList.add('active');
-                marketBtn.classList.remove('active');
-                priceGrp.style.display = 'block';
+            marketBtn.classList.toggle('active', type === 'MARKET');
+            limitBtn.classList.toggle('active', type === 'LIMIT');
+            twapBtn.classList.toggle('active', type === 'TWAP');
+
+            priceGrp.style.display = (type === 'LIMIT') ? 'block' : 'none';
+            twapGrp.style.display = (type === 'TWAP') ? 'flex' : 'none';
+
+            if (activeSide === 'BUY') {
+                submitBtn.style.backgroundColor = 'var(--green-glow)';
+                submitBtn.innerText = (type === 'TWAP') ? 'Deploy TWAP Long Algorithm' : 'Transmit Long Order';
+                qtyLabel.innerText = (type === 'TWAP') ? "Total Accumulation Volume" : "Quantity Allocation";
             } else {
-                marketBtn.classList.add('active');
-                limitBtn.classList.remove('active');
-                priceGrp.style.display = 'none';
+                submitBtn.style.backgroundColor = 'var(--red-glow)';
+                submitBtn.innerText = (type === 'TWAP') ? 'Deploy TWAP Short Algorithm' : 'Transmit Short Order';
+                qtyLabel.innerText = (type === 'TWAP') ? "Total Accumulation Volume" : "Quantity Allocation";
+            }
+        }
+
+        function quickCheckOrders(targetQueue) {
+            switchDataTab(targetQueue); refreshAccountData();
+            if (targetQueue === 'openOrders') {
+                showToast("Displaying Open Pending Orders", "success");
+            } else {
+                showToast("Displaying Past Order History", "success");
             }
         }
 
         function switchDataTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
-
-            event.target.classList.add('active');
+            const targetedButton = Array.from(document.querySelectorAll('.tab-btn')).find(btn => btn.getAttribute('onclick').includes(tabId));
+            if (targetedButton) targetedButton.classList.add('active');
             if(tabId === 'positions') document.getElementById('tabPositions').classList.add('active');
             if(tabId === 'openOrders') document.getElementById('tabOpenOrders').classList.add('active');
             if(tabId === 'history') document.getElementById('tabHistory').classList.add('active');
@@ -855,7 +985,11 @@
 
                 const openRes = await fetch(`/api/open_orders?symbol=${selectedSymbol}`);
                 const openData = await openRes.json();
-                renderOpenOrders(openData);
+                
+                const twapRes = await fetch('/api/twap_status');
+                const twapData = await twapRes.json();
+                
+                renderCombinedOpenOrders(openData, twapData);
 
                 const histRes = await fetch(`/api/history?symbol=${selectedSymbol}`);
                 const histData = await histRes.json();
@@ -865,16 +999,23 @@
                 const rulesData = await rulesRes.json();
                 if (rulesData && !rulesData.error) {
                     activeMaxSafeQty = rulesData.maxSafeQty;
+                    liveTickerMarkPrice = rulesData.currentPrice || 0.0;
                     document.getElementById('lblMaxQty').innerText = `Max Safe: ${activeMaxSafeQty}`;
                 }
-
-            } catch (err) {
-                console.error("Link synchronization failed: ", err);
-            }
+            } catch (err) { console.error("Link synchronization failed: ", err); }
         }
 
         function renderPositions(list) {
             const tbody = document.getElementById('positionTableBody');
+            const holdingBadge = document.getElementById('lblCurrentHolding');
+            
+            if (holdingBadge) {
+                holdingBadge.innerText = "Holding: 0.00";
+                holdingBadge.style.color = "var(--text-medium)";
+            }
+
+            // FILTER GUARD: Only display contracts that have a real asset allocation size
+            // If an order is just a resting limit, its positionAmt on the exchange remains 0
             if(!Array.isArray(list) || list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">No active open contracts.</td></tr>`;
                 return;
@@ -883,10 +1024,19 @@
             tbody.innerHTML = '';
             list.forEach(p => {
                 const amt = parseFloat(p.positionAmt);
+                
+                // CRITICAL SAFETY CHECK: If position amount is zero, it's a pending order, NOT an active trade!
+                if (amt === 0) return; 
+
                 const sideClass = amt > 0 ? 'pill-buy' : 'pill-sell';
                 const sideText = amt > 0 ? 'LONG' : 'SHORT';
                 const pnl = parseFloat(p.unrealizedProfit);
                 const pnlClass = pnl >= 0 ? 'pill-buy' : 'pill-sell';
+
+                if (p.symbol === selectedSymbol && holdingBadge) {
+                    holdingBadge.innerText = `Holding: ${amt > 0 ? '+' : ''}${amt}`;
+                    holdingBadge.style.color = amt > 0 ? 'var(--green-glow)' : 'var(--red-glow)';
+                }
 
                 tbody.innerHTML += `
                     <tr>
@@ -900,28 +1050,78 @@
             });
         }
 
-        function renderOpenOrders(list) {
+        function renderCombinedOpenOrders(nativeLimits, backendTwaps) {
             const tbody = document.getElementById('openOrdersTableBody');
-            if(!Array.isArray(list) || list.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">No pending limit orders on ${selectedSymbol}.</td></tr>`;
-                return;
+            tbody.innerHTML = '';
+
+            let totalRows = 0;
+
+            // 1. Loop through live parent TWAP tracking blocks (DO NOT DISTURB)
+            if (backendTwaps && Object.keys(backendTwaps).length > 0) {
+                Object.values(backendTwaps).forEach(algo => {
+                    if (algo.symbol === selectedSymbol && algo.status === "RUNNING") {
+                        totalRows++;
+                        const pctDone = Math.round((algo.executedSlices / algo.totalSlices) * 100);
+                        tbody.innerHTML += `
+                            <tr style="background-color: rgba(56, 97, 251, 0.03); border-left: 2px solid var(--blue-glow);">
+                                <td style="color: var(--blue-glow);">💎 <strong>${algo.twapId}</strong></td>
+                                <td><span style="background: var(--blue-glow); color:#fff; padding:2px 5px; font-size:10px; border-radius:3px;">TWAP ALGO</span></td>
+                                <td class="${algo.side === 'BUY' ? 'pill-buy' : 'pill-sell'}">${algo.side}</td>
+                                <td>Target Vol: ${algo.totalQty}</td>
+                                <td>
+                                    <div style="width:100%; background:#202530; height:6px; border-radius:3px; overflow:hidden; margin-bottom:4px;">
+                                        <div style="width:${pctDone}%; background:var(--blue-glow); height:100%;"></div>
+                                    </div>
+                                    <span style="font-size:10px; color:var(--text-medium);">${algo.executedSlices}/${algo.totalSlices} Slices (${pctDone}%)</span>
+                                </td>
+                                <td style="font-style: italic; color: var(--text-high); font-size:11px;">${algo.lastStatus}</td>
+                                <td><button class="btn-cancel" onclick="terminateRunningAlgo('${algo.twapId}')">Stop Algo</button></td>
+                            </tr>
+                        `;
+                    }
+                });
             }
 
-            tbody.innerHTML = '';
-            list.forEach(o => {
-                const sideClass = o.side === 'BUY' ? 'pill-buy' : 'pill-sell';
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${o.orderId}</td>
-                        <td>${o.type}</td>
-                        <td class="${sideClass}">${o.side}</td>
-                        <td>$${parseFloat(o.price).toLocaleString()}</td>
-                        <td>${o.origQty}</td>
-                        <td>${o.executedQty}</td>
-                        <td><button class="btn-cancel" onclick="cancelActiveOrder('${o.symbol}', '${o.orderId}')">Cancel</button></td>
-                    </tr>
-                `;
-            });
+            // 2. Loop through resting exchange order limits (Force to stay strictly in Pending Section)
+            if (Array.isArray(nativeLimits) && nativeLimits.length > 0) {
+                nativeLimits.forEach(o => {
+                    totalRows++;
+                    const sideClass = o.side === 'BUY' ? 'pill-buy' : 'pill-sell';
+                    
+                    // Force display formatting to reflect that this order is strictly resting and unexecuted
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${o.orderId}</td>
+                            <td><span style="border: 1px solid var(--border-active); padding:2px 5px; border-radius:3px;">${o.type}</span></td>
+                            <td class="${sideClass}">${o.side}</td>
+                            <td>$${parseFloat(o.price || o.stopPrice).toLocaleString()}</td>
+                            <td>${o.origQty}</td>
+                            <td style="color: var(--neon-gold); font-style: cubic-bezier;">Awaiting Orderbook Target price...</td>
+                            <td><button class="btn-cancel" onclick="cancelActiveOrder('${o.symbol}', '${o.orderId}')">Cancel</button></td>
+                        </tr>
+                    `;
+                });
+            }
+
+            if (totalRows === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">No pending limit orders or algorithms active on ${selectedSymbol}.</td></tr>`;
+            }
+        }
+
+        async function terminateRunningAlgo(twapId) {
+            addConsoleLog(`Sending Abort call to TWAP Thread pipeline for [${twapId}]...`, 'info');
+            try {
+                const res = await fetch('/api/cancel_twap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ twapId: twapId })
+                });
+                const data = await res.json();
+                if(data.status === "CANCELED") {
+                    addConsoleLog(`TWAP Instance ${twapId} canceled.`, 'success');
+                    refreshAccountData();
+                }
+            } catch (e) { console.error(e); }
         }
 
         function renderHistory(list) {
@@ -932,7 +1132,7 @@
             }
 
             tbody.innerHTML = '';
-            list.reverse().forEach(o => {
+            list.reverse().slice(0, 10).forEach(o => {
                 const sideClass = o.side === 'BUY' ? 'pill-buy' : 'pill-sell';
                 const priceVal = parseFloat(o.price) > 0 ? `$${parseFloat(o.price).toLocaleString()}` : 'MARKET';
                 tbody.innerHTML += `
@@ -951,17 +1151,19 @@
         async function executeTrade() {
             const btn = document.getElementById('submitOrderBtn');
             const originalText = btn.innerText;
-
-            btn.disabled = true;
-            btn.innerText = "Transmitting...";
-            addConsoleLog(`Submitting payload to proxy sanitization engine...`, 'info');
+            btn.disabled = true; btn.innerText = "Transmitting...";
+            addConsoleLog("Submitting execution sequence payload blocks to engine...", "info");
 
             const payload = {
                 symbol: selectedSymbol,
                 side: activeSide,
                 type: activeType,
                 quantity: document.getElementById('quantity').value,
-                price: document.getElementById('price').value
+                price: document.getElementById('price').value,
+                twapDuration: document.getElementById('twapDuration').value,
+                twapSlices: document.getElementById('twapSlices').value,
+                ocoTakeProfit: document.getElementById('ocoTakeProfit').value,
+                ocoStopLoss: document.getElementById('ocoStopLoss').value
             };
 
             try {
@@ -971,30 +1173,20 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-
-                btn.disabled = false;
-                btn.innerText = originalText;
+                btn.disabled = false; btn.innerText = originalText;
 
                 if (data.code) {
-                    addConsoleLog(`Order Rejected: ${data.msg} (Code ${data.code})`, 'error');
+                    addConsoleLog(`Error: ${data.msg} (Code ${data.code})`, 'error');
                     showToast(`Error: ${data.msg}`, 'error');
                 } else {
-                    addConsoleLog(`Order Accepted! ID: ${data.orderId} | Status: ${data.status}`, 'success');
-                    showToast(`Order Accepted! ID: ${data.orderId}`, 'success');
-                    
-                    if(activeType === 'LIMIT') {
-                        switchDataTab('openOrders');
-                    } else {
-                        switchDataTab('positions');
-                    }
+                    addConsoleLog(`Order Dispatched: ${activeType}`, 'success');
+                    showToast("Execution Successful!", "success");
+                    switchDataTab('openOrders');
                     refreshAccountData();
                 }
-
             } catch (err) {
-                btn.disabled = false;
-                btn.innerText = originalText;
-                addConsoleLog(`Link Timeout: Could not connect to Python API proxy.`, 'error');
-                showToast("Connection timeout error.", "error");
+                btn.disabled = false; btn.innerText = originalText;
+                addConsoleLog("Link Timeout: Proxy interface disconnect.", "error");
             }
         }
 
@@ -1007,18 +1199,13 @@
                     body: JSON.stringify({ symbol: sym, orderId: orderId })
                 });
                 const data = await res.json();
-
                 if(data.code) {
                     addConsoleLog(`Cancel Failed: ${data.msg}`, 'error');
-                    showToast(`Cancel failed: ${data.msg}`, 'error');
                 } else {
                     addConsoleLog(`Order #${orderId} cancelled successfully!`, 'success');
-                    showToast(`Order #${orderId} Cancelled`, 'success');
                     refreshAccountData();
                 }
-            } catch(err) {
-                addConsoleLog(`System Link failure on cancel action: ${err}`, 'error');
-            }
+            } catch(err) { console.error(err); }
         }
 
         function addConsoleLog(msg, type = 'info') {
@@ -1027,18 +1214,16 @@
             const line = document.createElement('div');
             line.className = `terminal-line ${type}`;
             line.innerHTML = `<span class="time">${ts}</span>${msg}`;
-            box.appendChild(line);
-            box.scrollTop = box.scrollHeight;
+            box.appendChild(line); box.scrollTop = box.scrollHeight;
         }
 
         function showToast(msg, type = 'success') {
             const bar = document.getElementById('statusToast');
             const indicator = document.getElementById('toastIndicator');
             const text = document.getElementById('toastText');
-
             indicator.style.backgroundColor = type === 'success' ? 'var(--green-glow)' : 'var(--red-glow)';
-            text.innerText = msg;
-            bar.classList.add('active');
+            if (type === 'info') indicator.style.backgroundColor = 'var(--blue-glow)';
+            text.innerText = msg; bar.classList.add('active');
             setTimeout(() => bar.classList.remove('active'), 4000);
         }
     </script>
