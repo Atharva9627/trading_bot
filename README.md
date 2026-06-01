@@ -26,23 +26,8 @@ Quantum Core is a high-performance, responsive full-stack trading workspace engi
 
 ---
 
-## 🏗️ Architectural Overview
 
-[ FRONTEND WORKSPACE ]                  [ BACKEND ENGINE ]                [ CENTRAL EXCHANGE ]
-+-------------------------+            +------------------------+        +-------------------------+
-|  JavaScript Client UI   |            |   Flask Proxy Server   |        |  Binance Futures API    |
-|                         |  HTTP JSON |                        |  HTTPS |                         |
-|  - 2s Polling Loop      |===========>| - Rule-clamping Gates  |=======>| - Market & Limit Books  |
-|  - Real-Time TV Widget  |            | - Asynchronous Threads |        | - Testnet Ledger        |
-+-------------------------+            +------------------------+        +-------------------------+
-||
-|| Spawns
-/
-+------------------------+
-|  TWAP Daemon Threads   |
-|  (Background Slicing)  |
-+------------------------+
-
+<img width="919" height="412" alt="image" src="https://github.com/user-attachments/assets/b9832654-7df2-4877-99b6-a2a14b1798e6" />
 
 ---
 
