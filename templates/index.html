@@ -894,7 +894,6 @@
             const submitBtn = document.getElementById('submitOrderBtn');
             const qtyLabel = document.getElementById('quantityLabel');
 
-            // Toggle layout selection indicators
             buyBtn.classList.remove('active');
             sellBtn.classList.remove('active');
 
@@ -902,10 +901,8 @@
                 buyBtn.classList.add('active'); 
                 activeSide = 'BUY'; 
                 
-                // Keep structural display states completely undisturbed
                 if (typeTabsGrp) typeTabsGrp.style.display = 'block';
                 
-                // Restore primary action execution themes dynamically
                 submitBtn.style.backgroundColor = 'var(--green-glow)';
                 setOrderType(activeType);
                 
@@ -915,7 +912,6 @@
                 
                 if (typeTabsGrp) typeTabsGrp.style.display = 'block';
                 
-                // Restore warning action execution themes dynamically
                 submitBtn.style.backgroundColor = 'var(--red-glow)';
                 setOrderType(activeType);
             }
@@ -1014,8 +1010,6 @@
                 holdingBadge.style.color = "var(--text-medium)";
             }
 
-            // FILTER GUARD: Only display contracts that have a real asset allocation size
-            // If an order is just a resting limit, its positionAmt on the exchange remains 0
             if(!Array.isArray(list) || list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 30px;">No active open contracts.</td></tr>`;
                 return;
@@ -1024,8 +1018,6 @@
             tbody.innerHTML = '';
             list.forEach(p => {
                 const amt = parseFloat(p.positionAmt);
-                
-                // CRITICAL SAFETY CHECK: If position amount is zero, it's a pending order, NOT an active trade!
                 if (amt === 0) return; 
 
                 const sideClass = amt > 0 ? 'pill-buy' : 'pill-sell';
@@ -1056,9 +1048,22 @@
 
             let totalRows = 0;
 
-            // 1. Loop through live parent TWAP tracking blocks (DO NOT DISTURB)
-            if (backendTwaps && Object.keys(backendTwaps).length > 0) {
-                Object.values(backendTwaps).forEach(algo => {
+            // --- 🔄 SORTING CORES (ADDED ONLY) ---
+            // Sort active running TWAPs descending by timestamp string structures
+            let sortedTwaps = [];
+            if (backendTwaps) {
+                sortedTwaps = Object.values(backendTwaps).sort((a, b) => b.twapId.localeCompare(a.twapId));
+            }
+
+            // Sort native exchange limit rows descending by absolute order ID metrics
+            let sortedLimits = [];
+            if (Array.isArray(nativeLimits)) {
+                sortedLimits = [...nativeLimits].sort((a, b) => b.orderId.toString().localeCompare(a.orderId.toString()));
+            }
+
+            // 1. Loop through live parent TWAP tracking blocks
+            if (sortedTwaps.length > 0) {
+                sortedTwaps.forEach(algo => {
                     if (algo.symbol === selectedSymbol && algo.status === "RUNNING") {
                         totalRows++;
                         const pctDone = Math.round((algo.executedSlices / algo.totalSlices) * 100);
@@ -1082,13 +1087,12 @@
                 });
             }
 
-            // 2. Loop through resting exchange order limits (Force to stay strictly in Pending Section)
-            if (Array.isArray(nativeLimits) && nativeLimits.length > 0) {
-                nativeLimits.forEach(o => {
+            // 2. Loop through resting exchange order limits
+            if (sortedLimits.length > 0) {
+                sortedLimits.forEach(o => {
                     totalRows++;
                     const sideClass = o.side === 'BUY' ? 'pill-buy' : 'pill-sell';
                     
-                    // Force display formatting to reflect that this order is strictly resting and unexecuted
                     tbody.innerHTML += `
                         <tr>
                             <td>${o.orderId}</td>
