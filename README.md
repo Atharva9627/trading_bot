@@ -53,6 +53,18 @@ Bash
 pip install -r requirements.txt
 3. Launching the Local Server
 Boot up the engine console proxy router interface:
+## 📦 Virtual Environment (`venv`) Management
+
+To isolate project dependencies and prevent conflicts with global system packages, always activate the local virtual environment before launching the server.
+
+### 1. Creating the Environment (First Time Only)
+If the `venv` folder is not present in your directory structure, initialize it using:
+python -m venv venv
+# If script execution is restricted on your system, run this line first:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
+# Then activate:
+.\venv\Scripts\Activate.ps1
 
 Bash
 python server.py
